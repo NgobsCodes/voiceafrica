@@ -77,17 +77,65 @@ function playDemo(idx) {
   document.querySelectorAll('.demo-tile').forEach(function(t,i){t.classList.toggle('active',i===idx)});
 }
 
+var FORMSPREE_ENDPOINT = 'https://formspree.io/f/YOUR_FORM_ID';
+
 function submitQuote() {
   var form = document.getElementById('quoteForm');
   var nameEl = form.querySelector('input[placeholder="e.g. Sarah Johnson"]');
   var emailEl = form.querySelector('input[type="email"]');
   var projectEl = form.querySelector('input[placeholder="e.g. Product launch video for new app"]');
+  var styleEl = form.querySelector('select');
+  var wordCountEl = form.querySelector('input[placeholder="e.g. 500 words"]');
+  var deadlineEl = form.querySelector('input[type="date"]');
+  var textareas = form.querySelectorAll('textarea');
+  var scriptEl = textareas[0];
+  var notesEl = textareas[1];
+
   if(!nameEl.value.trim()||!emailEl.value.trim()||!projectEl.value.trim()){
     alert('Please fill in your name, email, and project description.');
     return;
   }
-  document.getElementById('quoteForm').style.display='none';
-  document.getElementById('successBox').style.display='block';
+
+  var usageRights = [];
+  form.querySelectorAll('.usage-btn.selected').forEach(function(btn){
+    usageRights.push(btn.querySelector('div').textContent);
+  });
+
+  var submitBtn = form.querySelector('.btn-primary');
+  submitBtn.textContent = 'Sending...';
+  submitBtn.disabled = true;
+
+  fetch(FORMSPREE_ENDPOINT, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+    body: JSON.stringify({
+      name: nameEl.value.trim(),
+      email: emailEl.value.trim(),
+      project: projectEl.value.trim(),
+      style: styleEl.value,
+      usage_rights: usageRights.join(', ') || 'Not specified',
+      word_count: wordCountEl.value.trim() || 'Not specified',
+      deadline: deadlineEl.value || 'Not specified',
+      script: scriptEl.value.trim() || 'Not provided',
+      notes: notesEl.value.trim() || 'None'
+    })
+  })
+  .then(function(res){ return res.json(); })
+  .then(function(data){
+    if(data.ok){
+      document.getElementById('quoteForm').style.display='none';
+      document.getElementById('successBox').style.display='block';
+    } else {
+      submitBtn.textContent = 'Submit Quote Request';
+      submitBtn.disabled = false;
+      alert('Something went wrong. Please email ngobsvoice@gmail.com directly.');
+    }
+  })
+  .catch(function(){
+    submitBtn.textContent = 'Submit Quote Request';
+    submitBtn.disabled = false;
+    alert('Could not send. Please email ngobsvoice@gmail.com directly.');
+  });
 }
 
 function toggleFaq(el) {
