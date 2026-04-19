@@ -79,6 +79,26 @@ function playDemo(idx) {
 
 var FORMSPREE_ENDPOINT = 'https://formspree.io/f/mpqkrpdk';
 
+function setFieldError(el, msg) {
+  clearFieldError(el);
+  el.style.borderColor = '#e05252';
+  var err = document.createElement('div');
+  err.className = 'field-error';
+  err.style.cssText = 'color:#e05252;font-size:12px;margin-top:5px';
+  err.textContent = msg;
+  el.parentNode.appendChild(err);
+}
+
+function clearFieldError(el) {
+  el.style.borderColor = '';
+  var prev = el.parentNode.querySelector('.field-error');
+  if(prev) prev.remove();
+}
+
+function isValidEmail(v) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+}
+
 function submitQuote() {
   var form = document.getElementById('quoteForm');
   var nameEl = form.querySelector('input[placeholder="e.g. Sarah Johnson"]');
@@ -91,10 +111,29 @@ function submitQuote() {
   var scriptEl = textareas[0];
   var notesEl = textareas[1];
 
-  if(!nameEl.value.trim()||!emailEl.value.trim()||!projectEl.value.trim()){
-    alert('Please fill in your name, email, and project description.');
-    return;
+  [nameEl, emailEl, projectEl, styleEl].forEach(clearFieldError);
+  var valid = true;
+
+  if(!nameEl.value.trim()){
+    setFieldError(nameEl, 'Please enter your name.');
+    valid = false;
   }
+  if(!emailEl.value.trim()){
+    setFieldError(emailEl, 'Please enter your email address.');
+    valid = false;
+  } else if(!isValidEmail(emailEl.value.trim())){
+    setFieldError(emailEl, 'That doesn\'t look like a valid email address.');
+    valid = false;
+  }
+  if(!projectEl.value.trim()){
+    setFieldError(projectEl, 'Please describe your project.');
+    valid = false;
+  }
+  if(!styleEl.value){
+    setFieldError(styleEl, 'Please select a voice over style.');
+    valid = false;
+  }
+  if(!valid) return;
 
   var usageRights = [];
   form.querySelectorAll('.usage-btn.selected').forEach(function(btn){
@@ -128,13 +167,27 @@ function submitQuote() {
     } else {
       submitBtn.textContent = 'Submit Quote Request';
       submitBtn.disabled = false;
-      alert('Something went wrong. Please email ngobsvoice@gmail.com directly.');
+      var errBox = document.getElementById('formError');
+      if(!errBox){
+        errBox = document.createElement('div');
+        errBox.id = 'formError';
+        errBox.style.cssText = 'color:#e05252;font-size:13px;padding:12px 16px;background:rgba(224,82,82,0.08);border:1px solid rgba(224,82,82,0.2);border-radius:8px;margin-top:8px';
+        submitBtn.parentNode.insertBefore(errBox, submitBtn.nextSibling);
+      }
+      errBox.textContent = 'Something went wrong sending your request. Please email ngobsvoice@gmail.com directly.';
     }
   })
   .catch(function(){
     submitBtn.textContent = 'Submit Quote Request';
     submitBtn.disabled = false;
-    alert('Could not send. Please email ngobsvoice@gmail.com directly.');
+    var errBox = document.getElementById('formError');
+    if(!errBox){
+      errBox = document.createElement('div');
+      errBox.id = 'formError';
+      errBox.style.cssText = 'color:#e05252;font-size:13px;padding:12px 16px;background:rgba(224,82,82,0.08);border:1px solid rgba(224,82,82,0.2);border-radius:8px;margin-top:8px';
+      submitBtn.parentNode.insertBefore(errBox, submitBtn.nextSibling);
+    }
+    errBox.textContent = 'Could not connect. Please check your internet connection or email ngobsvoice@gmail.com directly.';
   });
 }
 
